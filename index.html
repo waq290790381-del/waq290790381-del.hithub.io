@@ -3,23 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>WeChat RP (哈基米精修版)</title>
+  <title>RP 赛博爱巢</title>
   <style>
-    /* 全局重置 */
+    /* --- 基础样式 --- */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { 
-        background: #f5f5f5; /* 微信经典灰底 */
+        background-color: #f5f5f5;
+        background-size: cover;
+        background-position: center;
         height: 100vh; 
         display: flex; 
         flex-direction: column; 
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
     }
+    /* 遮罩层，让背景图稍微暗一点，看字更清楚 */
+    .bg-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(245, 245, 245, 0.85); /* 默认灰底，有图时变透明 */
+        z-index: -1;
+    }
 
-    /* 顶部标题栏 */
+    /* --- 顶部栏 --- */
     .header {
         height: 50px;
-        background: #f5f5f5;
-        border-bottom: 1px solid #e5e5e5;
+        background: rgba(245, 245, 245, 0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(0,0,0,0.1);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -27,17 +36,21 @@
         font-weight: 600;
         font-size: 17px;
         z-index: 10;
+        flex-shrink: 0;
     }
-    /* 设置按钮（齿轮） */
-    .settings-btn {
+    .btn-icon {
         position: absolute;
-        right: 15px;
+        padding: 10px;
         font-size: 20px;
         cursor: pointer;
         opacity: 0.7;
+        transition: 0.2s;
     }
+    .btn-icon:active { opacity: 1; transform: scale(0.9); }
+    .settings-btn { right: 5px; }
+    .trash-btn { left: 5px; font-size: 18px; }
 
-    /* 聊天区域 */
+    /* --- 聊天区 --- */
     .chat-container { 
         flex: 1; 
         overflow-y: auto; 
@@ -45,64 +58,55 @@
         display: flex; 
         flex-direction: column; 
         gap: 15px;
-        background: #f5f5f5;
     }
 
-    /* 消息气泡 */
     .message-row {
         display: flex;
         align-items: flex-start;
         gap: 10px;
         max-width: 100%;
+        animation: fadeIn 0.3s ease;
     }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
     .message-row.user { flex-direction: row-reverse; }
     
     .avatar {
-        width: 40px;
-        height: 40px;
+        width: 40px; height: 40px;
         border-radius: 6px;
         background-color: #ddd;
         background-size: cover;
         flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    /* 默认头像颜色 */
-    .avatar.ai { background-image: url('https://api.dicebear.com/7.x/adventurer/svg?seed=Felix'); background-color: white; } 
-    .avatar.user { background-image: url('https://api.dicebear.com/7.x/adventurer/svg?seed=User'); background-color: #a0e959; }
+    .avatar.ai { background-image: url('https://api.dicebear.com/7.x/notionists/svg?seed=Felix'); background-color: #fff; } 
+    .avatar.user { background-image: url('https://api.dicebear.com/7.x/notionists/svg?seed=User'); background-color: #a0e959; }
 
     .bubble {
         padding: 10px 14px;
         font-size: 16px;
-        line-height: 1.5;
+        line-height: 1.6;
         border-radius: 6px;
         position: relative;
         word-break: break-word;
         white-space: pre-wrap;
-        max-width: 70vw;
+        max-width: 75vw;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    
-    /* 气泡颜色 */
-    .user .bubble { 
-        background: #95ec69; /* 微信绿 */
-        color: black;
-    }
-    .user .bubble::after { /* 小三角 */
+    .user .bubble { background: #95ec69; color: black; }
+    .user .bubble::after { 
         content: ''; position: absolute; right: -6px; top: 14px;
         border-top: 6px solid transparent; border-bottom: 6px solid transparent;
         border-left: 6px solid #95ec69;
     }
-
-    .ai .bubble { 
-        background: white; 
-        color: black;
-    }
-    .ai .bubble::after { /* 小三角 */
+    .ai .bubble { background: white; color: black; }
+    .ai .bubble::after { 
         content: ''; position: absolute; left: -6px; top: 14px;
         border-top: 6px solid transparent; border-bottom: 6px solid transparent;
         border-right: 6px solid white;
     }
 
-    /* 底部输入区 */
+    /* --- 底部输入 --- */
     .input-area { 
         padding: 10px; 
         background: #f7f7f7; 
@@ -111,6 +115,7 @@
         align-items: flex-end; 
         gap: 10px; 
         min-height: 50px;
+        flex-shrink: 0;
     }
     .input-area textarea { 
         flex: 1; 
@@ -121,7 +126,7 @@
         background: white;
         font-size: 16px;
         resize: none;
-        max-height: 100px;
+        max-height: 120px;
         font-family: inherit;
     }
     .input-area button { 
@@ -132,11 +137,12 @@
         border-radius: 6px; 
         font-weight: bold; 
         font-size: 14px;
-        margin-bottom: 2px; /* 对齐 */
+        margin-bottom: 2px; 
+        transition: 0.2s;
     }
     .input-area button:disabled { background: #e0e0e0; color: #aaa; }
 
-    /* 设置弹窗 (Modal) */
+    /* --- 弹窗 --- */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.5);
@@ -144,192 +150,266 @@
         justify-content: center;
         align-items: center;
         z-index: 100;
+        backdrop-filter: blur(3px);
     }
     .modal {
         background: white;
-        width: 85%;
-        max-width: 400px;
+        width: 85%; max-width: 400px;
         padding: 20px;
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        max-height: 80vh;
+        overflow-y: auto;
     }
     .modal h3 { margin-bottom: 15px; text-align: center; color: #333; }
-    .modal label { display: block; margin-top: 10px; font-size: 14px; color: #666; }
+    .modal label { display: block; margin-top: 12px; font-size: 14px; color: #666; font-weight: bold; }
     .modal input, .modal textarea { 
-        width: 100%; padding: 8px; margin-top: 5px; 
+        width: 100%; padding: 10px; margin-top: 5px; 
         border: 1px solid #ddd; border-radius: 6px; 
         font-size: 14px;
     }
     .modal textarea { height: 80px; }
     .modal-close {
-        margin-top: 20px;
-        width: 100%;
-        padding: 10px;
-        background: #07c160;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 16px;
+        margin-top: 20px; width: 100%; padding: 12px;
+        background: #07c160; color: white;
+        border: none; border-radius: 6px; font-size: 16px; font-weight: bold;
     }
   </style>
 </head>
 <body>
 
-  <!-- 顶部标题 -->
-  <div class="header">
+<div class="bg-overlay" id="bgOverlay"></div>
+
+<div class="header">
+    <div class="btn-icon trash-btn" onclick="clearChat()">🗑️</div>
     <span id="chatTitle">Qwen 教授</span>
-    <div class="settings-btn" onclick="toggleSettings()">⚙️</div>
-  </div>
+    <div class="btn-icon settings-btn" onclick="openSettings()">⚙️</div>
+</div>
 
-  <!-- 聊天内容 -->
-  <div class="chat-container" id="chatContainer">
-    <!-- 消息会动态插在这里 -->
-  </div>
+<div class="chat-container" id="chatContainer"></div>
 
-  <!-- 底部输入框 -->
-  <div class="input-area">
+<div class="input-area">
     <textarea id="userInput" rows="1" placeholder="说点什么..."></textarea>
     <button id="sendBtn">发送</button>
-  </div>
+</div>
 
-  <!-- 设置弹窗 -->
-  <div class="modal-overlay" id="settingsModal">
+<!-- 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal">
     <div class="modal">
-      <h3>⚙️ 设置</h3>
-      <label>API Key:</label>
-      <input id="apiKey" type="password" placeholder="sk-xxx">
-      
-      <label>模型 (Model):</label>
-      <input id="model" value="qwen-max">
-      
-      <label>对方昵称:</label>
-      <input id="botName" value="Qwen 教授" oninput="document.getElementById('chatTitle').innerText = this.value">
+        <h3>⚙️ 配置中心</h3>
+        
+        <label>API Key:</label>
+        <input id="apiKey" type="password" placeholder="sk-xxxxxxxx">
+        
+        <label>Base URL (选填):</label>
+        <input id="baseUrl" placeholder="默认: https://dashscope.aliyuncs.com/compatible-mode/v1">
+        
+        <label>模型 (Model):</label>
+        <input id="model" value="qwen-max">
+        
+        <label>对方昵称:</label>
+        <input id="botName" value="Qwen 教授" oninput="updateTitle(this.value)">
 
-      <label>人设 (System Prompt):</label>
-      <textarea id="systemPrompt" placeholder="例如：你是一个斯文败类教授...">你是一个乐于助人的AI助手。</textarea>
-      
-      <button class="modal-close" onclick="toggleSettings()">保存并关闭</button>
+        <label>聊天背景图 (URL):</label>
+        <input id="bgImage" placeholder="粘贴图片链接，留空则默认灰色" onchange="updateBg()">
+
+        <label>人设 (System Prompt):</label>
+        <textarea id="systemPrompt" placeholder="例如：你是一个斯文败类教授...">你是一个乐于助人的AI助手。</textarea>
+        
+        <button class="modal-close" onclick="saveAndCloseSettings()">保存并关闭</button>
     </div>
-  </div>
+</div>
 
-  <script>
-    const chatContainer = document.getElementById('chatContainer');
-    const userInput = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
-    const modal = document.getElementById('settingsModal');
+<script>
+// --- 核心逻辑区 ---
 
-    // 自动调整输入框高度
-    userInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-        if(this.value === '') this.style.height = 'auto';
+const chatContainer = document.getElementById('chatContainer');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+const modal = document.getElementById('settingsModal');
+
+// 1. 初始化加载
+let messages = JSON.parse(localStorage.getItem('chatMessages_v3') || '[]');
+const savedSettings = JSON.parse(localStorage.getItem('rp_settings_v3') || '{}');
+
+// 填充设置项
+document.getElementById('apiKey').value = savedSettings.apiKey || '';
+document.getElementById('baseUrl').value = savedSettings.baseUrl || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+document.getElementById('model').value = savedSettings.model || 'qwen-max';
+document.getElementById('systemPrompt').value = savedSettings.systemPrompt || '你是一个深沉的哲学教授。';
+document.getElementById('botName').value = savedSettings.botName || 'Qwen 教授';
+document.getElementById('bgImage').value = savedSettings.bgImage || '';
+
+// 应用初始设置
+updateTitle(document.getElementById('botName').value);
+updateBg();
+renderMessages(false); // false = 不带动画直接渲染
+
+// 2. 界面交互函数
+function updateTitle(val) { document.getElementById('chatTitle').innerText = val; }
+
+function updateBg() {
+    const url = document.getElementById('bgImage').value;
+    const body = document.body;
+    const overlay = document.getElementById('bgOverlay');
+    if (url) {
+        body.style.backgroundImage = `url('${url}')`;
+        overlay.style.background = 'rgba(255, 255, 255, 0.7)'; // 有图时加一层蒙版
+    } else {
+        body.style.backgroundImage = 'none';
+        overlay.style.background = '#f5f5f5';
+    }
+}
+
+function openSettings() { modal.style.display = 'flex'; }
+
+function saveAndCloseSettings() {
+    // 强行保存，不管有没有错
+    try {
+        const settings = {
+            apiKey: document.getElementById('apiKey').value.trim(),
+            baseUrl: document.getElementById('baseUrl').value.trim().replace(/\/+$/, ''), // 去掉末尾斜杠
+            model: document.getElementById('model').value.trim(),
+            systemPrompt: document.getElementById('systemPrompt').value,
+            botName: document.getElementById('botName').value,
+            bgImage: document.getElementById('bgImage').value
+        };
+        localStorage.setItem('rp_settings_v3', JSON.stringify(settings));
+        updateBg(); // 立即应用背景
+    } catch (e) {
+        console.error("保存失败:", e);
+    }
+    // 强制关闭弹窗
+    modal.style.display = 'none';
+}
+
+function clearChat() {
+    if(confirm("确定要清空和教授的聊天记录吗？😱")) {
+        messages = [];
+        localStorage.setItem('chatMessages_v3', '[]');
+        renderMessages();
+    }
+}
+
+// 3. 消息渲染（支持分段）
+function renderMessages(animate = false) {
+    chatContainer.innerHTML = '';
+    messages.forEach(msg => {
+        // 智能分段：按双换行符切分，模拟多条气泡
+        const parts = msg.content.split(/\n\s*\n/); 
+        parts.forEach(part => {
+            if(!part.trim()) return;
+            const row = document.createElement('div');
+            row.className = `message-row ${msg.role === 'user' ? 'user' : 'ai'}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = `avatar ${msg.role === 'user' ? 'user' : 'ai'}`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.innerText = part; // 防止XSS
+
+            row.appendChild(avatar);
+            row.appendChild(bubble);
+            chatContainer.appendChild(row);
+        });
     });
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 
-    // 切换设置弹窗
-    function toggleSettings() {
-        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-        // 保存设置到 localStorage
-        if (modal.style.display === 'none') {
-            localStorage.setItem('rp_settings', JSON.stringify({
-                apiKey: document.getElementById('apiKey').value,
-                model: document.getElementById('model').value,
-                systemPrompt: document.getElementById('systemPrompt').value,
-                botName: document.getElementById('botName').value
-            }));
-        }
+// 4. 打字机效果辅助函数
+async function typeWriterEffect(text) {
+    // 创建一个新的 AI 气泡
+    const row = document.createElement('div');
+    row.className = 'message-row ai';
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar ai';
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+    chatContainer.appendChild(row);
+
+    // 逐字显示
+    let currentText = "";
+    const chars = text.split('');
+    for (let i = 0; i < chars.length; i++) {
+        currentText += chars[i];
+        bubble.innerText = currentText;
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+        // 随机延迟，模拟打字
+        await new Promise(r => setTimeout(r, Math.random() * 30 + 10)); 
     }
+}
 
-    // 加载设置和历史
-    const savedSettings = JSON.parse(localStorage.getItem('rp_settings') || '{}');
-    if (savedSettings.apiKey) document.getElementById('apiKey').value = savedSettings.apiKey;
-    if (savedSettings.model) document.getElementById('model').value = savedSettings.model;
-    if (savedSettings.systemPrompt) document.getElementById('systemPrompt').value = savedSettings.systemPrompt;
-    if (savedSettings.botName) {
-        document.getElementById('botName').value = savedSettings.botName;
-        document.getElementById('chatTitle').innerText = savedSettings.botName;
-    }
+// 5. 发送逻辑
+async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
 
-    let messages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-    renderMessages();
+    const settings = JSON.parse(localStorage.getItem('rp_settings_v3') || '{}');
+    if (!settings.apiKey) { alert("请先去设置里填 Key！"); openSettings(); return; }
 
-    function renderMessages() {
-      chatContainer.innerHTML = '';
-      messages.forEach(msg => {
-        const row = document.createElement('div');
-        row.className = `message-row ${msg.role === 'user' ? 'user' : 'ai'}`;
-        
-        const avatar = document.createElement('div');
-        avatar.className = `avatar ${msg.role === 'user' ? 'user' : 'ai'}`;
-        
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.textContent = msg.content;
+    // UI 更新
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    sendBtn.disabled = true;
+    sendBtn.innerText = '...';
 
-        row.appendChild(avatar);
-        row.appendChild(bubble);
-        chatContainer.appendChild(row);
-      });
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
+    // 保存用户消息
+    messages.push({ role: 'user', content: text });
+    localStorage.setItem('chatMessages_v3', JSON.stringify(messages));
+    renderMessages(false); // 渲染用户消息
 
-    async function sendMessage() {
-      const content = userInput.value.trim();
-      if (!content) return;
-
-      const apiKey = document.getElementById('apiKey').value;
-      const model = document.getElementById('model').value;
-      const systemPrompt = document.getElementById('systemPrompt').value;
-
-      if (!apiKey) { alert('请先点击右上角设置 API Key！'); toggleSettings(); return; }
-
-      // 添加用户消息
-      messages.push({ role: 'user', content });
-      localStorage.setItem('chatMessages', JSON.stringify(messages));
-      renderMessages();
-
-      userInput.value = '';
-      userInput.style.height = 'auto'; // 重置高度
-      sendBtn.disabled = true;
-      sendBtn.innerText = '...';
-
-      // 构造请求 (这里用的是阿里云 Dashscope 兼容 OpenAI 格式的接口)
-      // 注意：如果你的 Key 是 Dashscope 的，BaseURL 通常是这个
-      const baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-
-      try {
-        const res = await fetch(baseUrl + '/chat/completions', { 
-            method: 'POST', 
+    try {
+        // 构造请求
+        const response = await fetch(`${settings.baseUrl}/chat/completions`, {
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
+                'Authorization': `Bearer ${settings.apiKey}`
             },
             body: JSON.stringify({
-                model: model,
+                model: settings.model,
                 messages: [
-                    { role: 'system', content: systemPrompt },
-                    ...messages.slice(-20) // 只带最近20条，省钱！
+                    { role: 'system', content: settings.systemPrompt },
+                    ...messages.slice(-20) // 只带最近20条
                 ],
-                stream: false
+                stream: false // 暂时不开流式，用前端模拟打字机更稳
             })
         });
 
-        const data = await res.json();
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
 
-        if (!res.ok) throw new Error(data.error?.message || '请求失败');
+        const aiText = data.choices[0].message.content;
+        
+        // 播放打字机动画
+        await typeWriterEffect(aiText);
 
-        const aiMsg = data.choices[0]?.message?.content || '（无回复）';
-        messages.push({ role: 'assistant', content: aiMsg });
-        localStorage.setItem('chatMessages', JSON.stringify(messages));
+        // 动画结束后保存
+        messages.push({ role: 'assistant', content: aiText });
+        localStorage.setItem('chatMessages_v3', JSON.stringify(messages));
+        
+        // 重新渲染以确保格式正确（比如分段）
+        renderMessages(false); 
+
+    } catch (err) {
+        alert("出错了：" + err.message);
+        messages.pop(); // 发送失败回滚
         renderMessages();
-      } catch (err) {
-        alert('出错了：' + err.message);
-      } finally {
+    } finally {
         sendBtn.disabled = false;
         sendBtn.innerText = '发送';
-      }
     }
+}
 
-    sendBtn.addEventListener('click', sendMessage);
-  </script>
+// 绑定事件
+sendBtn.addEventListener('click', sendMessage);
+userInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+</script>
 </body>
 </html>
